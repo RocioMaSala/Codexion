@@ -1,32 +1,15 @@
-#include <codexion.h>
-#include <pthread.h>
+#include "codexion.h"
 
-int	ft_atoi(const char *str)
+int main(int argc, char **argv)
 {
-	int	i;
-	int	countneg;
-	int	sum;
+	t_simulation sim;
+	struct timeval actual_time;
+	long long time;
 
-	i = 0;
-	countneg = 0;
-	while ((str[i] == ' ') || ((str[i] >= 9) && (str[i] <= 13)))
-	{
-		i++;
-	}
-	if (str[i] == '+' || str[i] == '-')
-	{
-		if (str[i] == '-')
-			countneg++;
-		i++;
-	}
-	sum = 0;
-	while (str[i] >= '0' && str[i] <= '9')
-	{
-		sum = sum * 10 + (str[i] - '0');
-		i++;
-	}
-	if (countneg % 2 == 1)
-		sum = sum * (-1);
-	return (sum);
+	if (parse_args(argc, argv, &sim.config))
+        return (1);
+	time = gettimeofday(&actual_time, NULL)
+
 }
+
 

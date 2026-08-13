@@ -84,5 +84,10 @@ struct s_simulation
     int stop_simulation;
 };
 
-persons = malloc(sizeof(t_person) * number_of_coders);
-dongles = malloc(sizeof(t_dongle) * number_of_coders);
+int parse_args(int argc, char **argv, t_config *config)
+
+#endif
+
+//persons = malloc(sizeof(t_person) * number_of_coders);
+//dongles = malloc(sizeof(t_dongle) * number_of_coders);
+

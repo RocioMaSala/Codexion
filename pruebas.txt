@@ -1,0 +1,46 @@
+ === FUNCIONAMIENTO NORMAL ===
+./codexion 3 800 200 200 200 3 50 fifo > out_basic_fifo.log 2>&1
+echo "Exit code: $?" >> out_basic_fifo.log
+
+./codexion 3 800 200 200 200 3 50 edf > out_basic_edf.log 2>&1
+echo "Exit code: $?" >> out_basic_edf.log
+
+# === QUEMADO INTENCIONAL ===
+./codexion 3 100 300 100 100 10 50 fifo > out_burnout_fifo.log 2>&1
+echo "Exit code: $?" >> out_burnout_fifo.log
+
+./codexion 3 100 300 100 100 10 50 edf > out_burnout_edf.log 2>&1
+echo "Exit code: $?" >> out_burnout_edf.log
+
+# === COOLDOWN ALTO (DETECTAR ESPERAS) ===
+./codexion 2 1000 100 100 100 5 500 fifo > out_cooldown_fifo.log 2>&1
+echo "Exit code: $?" >> out_cooldown_fifo.log
+
+./codexion 2 1000 100 100 100 5 500 edf > out_cooldown_edf.log 2>&1
+echo "Exit code: $?" >> out_cooldown_edf.log
+
+# === CASO EDGE: UN SOLO CODER ===
+./codexion 1 500 200 100 100 3 50 fifo > out_single_fifo.log 2>&1
+echo "Exit code: $?" >> out_single_fifo.log
+
+./codexion 1 500 200 100 100 3 50 edf > out_single_edf.log 2>&1
+echo "Exit code: $?" >> out_single_edf.log
+
+# === STRESS TEST (MUCHOS CICLOS) ===
+./codexion 5 600 100 80 80 7 30 fifo > out_stress_fifo.log 2>&1
+echo "Exit code: $?" >> out_stress_fifo.log
+
+./codexion 5 600 100 80 80 7 30 edf > out_stress_edf.log 2>&1
+echo "Exit code: $?" >> out_stress_edf.log
+
+# === CONFLICTO DE RECURSOS (MUCHA CONTENCIÓN) ===
+./codexion 4 150 200 100 100 5 20 fifo > out_conflict_fifo.log 2>&1
+echo "Exit code: $?" >> out_conflict_fifo.log
+
+./codexion 4 150 200 100 100 5 20 edf > out_conflict_edf.log 2>&1
+echo "Exit code: $?" >> out_conflict_edf.log
+
+
+PRUEBA 1: Diferenciar FIFO de EDF
+./codexion 3 1000 300 200 100 4 50 fifo
+./codexion 3 1000 300 200 100 4 50 edf

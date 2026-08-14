@@ -36,6 +36,8 @@ typedef struct s_config
     t_scheduler scheduler;
 }t_config;
 
+typedef struct s_person t_person;
+
 typedef struct s_heap_entry
 {
     t_person    *person;
@@ -59,7 +61,7 @@ typedef struct s_dongle
 
 typedef struct s_simulation t_simulation;
 
-typedef struct s_person
+struct s_person
 {
     int id;
     t_dongle *dongle_left;
@@ -69,7 +71,7 @@ typedef struct s_person
     t_state actual_state;
     pthread_mutex_t state_mutex;
     t_simulation    *sim;
-}t_person;
+};
 
 struct s_simulation
 {
@@ -84,7 +86,13 @@ struct s_simulation
     int stop_simulation;
 };
 
-int parse_args(int argc, char **argv, t_config *config)
+int parse_args(int argc, char **argv, t_config *config);
+int main(int argc, char **argv);
+int create_threads(t_simulation *sim, pthread_t *thread_ids);
+int assign_neighbors(t_simulation *sim);
+int init_simulation(t_simulation *sim);
+void *coder_routine(void *arg);
+void cleanup_simulation(t_simulation *sim)
 
 #endif
 

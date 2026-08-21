@@ -12,7 +12,6 @@
 
 #include "codexion.h"
 
-
 void esperar_turno(t_dongle *dongle_right)
 {
     struct timeval      tv;
@@ -58,14 +57,30 @@ int	dongle_disponible(t_dongle *dongle, long long ahora, long long cooldown)
 	return (1);
 }
 
-void	take_dongles(t_person *person)
+
+int should_stop (t_simulation *sim)
+{
+	int ok_to_go;
+	
+	ok_to_go = 0;
+	pthread_mutex_lock(&sim->stop_mutex);
+	ok_to_go = sim->stop_simulation;
+	pthread_mutex_unlock(&sim->stop_mutex);
+	return (ok_to_go);
+}
+
+
+int	take_dongles(t_person *person)
 {
 	long long	ahora;
 	long long	cooldown;
+	int	ok_to_go;
 
 	cooldown = person->sim->config.dongle_cooldown;
-	while (1)
+	ok_to_go = 0;
+	while (ok_to_go == 0)
 	{
+		ok_to_go = should_stop (person->sim);
 		ahora = tiempo_actual_relativo(person->sim);
 		pthread_mutex_lock(&person->sim->waiter);
 		if (dongle_disponible(person->dongle_left, ahora, cooldown)
@@ -74,25 +89,90 @@ void	take_dongles(t_person *person)
 			person->dongle_left->is_free = 0;
 			person->dongle_right->is_free = 0;
 			pthread_mutex_unlock(&person->sim->waiter);
-			break ;
+			return (0);
 		}
 		pthread_mutex_unlock(&person->sim->waiter);
-		pthread_cond_timedwait();
+		esperar_turno(person->dongle_right);
 	}
+	return (1);
 }
+
+void	compile(t_person *person)
+{
+	pthread_mutex_lock(&person->state_mutex);
+	person->actual_state = COMPILING;
+	person->last_compile_start = tiempo_actual_relativo(person->sim);
+	pthread_mutex_unlock(&person->state_mutex);
+	pthread_mutex_lock(&person->sim->log);
+	printf("%lld %d is compiling\n", person->last_compile_start, person->id);
+	pthread_mutex_unlock(&person->sim->log);
+	usleep(person->sim->config.time_to_compile * 1000);
+	person->number_of_compilations ++;
+}
+
+
+void release_one_dongle(t_dongle *dongle, t_simulation *sim)
+{
+	pthread_mutex_lock(&dongle->mutex);
+	dongle->is_free = 1;
+	dongle->time_liberation = tiempo_actual_relativo(sim);
+	pthread_cond_broadcast(&dongle->cond);
+	pthread_mutex_unlock(&dongle->mutex);
+}
+
+void release_dongles(t_person *person)
+{
+	release_one_dongle(person->dongle_left, person->sim);
+	release_one_dongle(person->dongle_right, person->sim);
+}
+
+void	debug(t_person *person)
+{
+	long long actual_time;
+	
+	pthread_mutex_lock(&person->state_mutex);
+	person->actual_state = DEBUGGING;
+	actual_time = tiempo_actual_relativo(person->sim);
+	pthread_mutex_unlock(&person->state_mutex);
+	pthread_mutex_lock(&person->sim->log);
+	printf("%lld %d is debugging\n", actual_time, person->id);
+	pthread_mutex_unlock(&person->sim->log);
+	usleep(person->sim->config.time_to_debug * 1000);
+}
+
+void	refactor(t_person *person)
+{
+	long long actual_time;
+	
+	pthread_mutex_lock(&person->state_mutex);
+	person->actual_state = REFACTORING;
+	actual_time = tiempo_actual_relativo(person->sim);
+	pthread_mutex_unlock(&person->state_mutex);
+	pthread_mutex_lock(&person->sim->log);
+	printf("%lld %d is refactoring\n", actual_time, person->id);
+	pthread_mutex_unlock(&person->sim->log);
+	usleep(person->sim->config.time_to_refactor * 1000);
+}
+
 
 void	*coder_routine(void *arg)
 {
 	t_person	*person;
 
 	person = (t_person *)arg;
-	while (!simulation_finished(person->sim))
+	while (!should_stop(person->sim))
 	{
-		take_dongles(person);
-		compile(person);
-		release_dongles(person);
-		debug(person);
-		refactor(person);
+		if (take_dongles(person) != 0)
+		{
+			compile(person);
+			release_dongles(person);
+			if(!should_stop(person->sim))
+			{
+				debug(person);
+				if(!should_stop(person->sim))
+					refactor(person);
+			}
+		}
 	}
 	return (NULL);
 }

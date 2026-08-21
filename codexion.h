@@ -102,12 +102,22 @@ int							parse_args(int argc, char **argv, t_config *config);
 int							main(int argc, char **argv);
 int							create_threads(t_simulation *sim,
 								pthread_t *thread_ids);
-int							assign_neighbors(t_simulation *sim);
+int							assign_data_persons(t_simulation *sim);
 int							init_simulation(t_simulation *sim);
 void						*coder_routine(void *arg);
 void	cleanup_simulation(t_simulation *sim);
-void cleanup_init_failure (t_simulation *sim, int hasta, int stage)
+void cleanup_init_failure (t_simulation *sim, int hasta, int stage);
+void esperar_turno(t_dongle *dongle_right);
+long long	tiempo_actual_relativo(t_simulation *sim);
+int	dongle_disponible(t_dongle *dongle, long long ahora, long long cooldown);
+int should_stop (t_simulation *sim);
+int	take_dongles(t_person *person);
+void	compile(t_person *person);
+void release_one_dongle(t_dongle *dongle, t_simulation *sim);
+void release_dongles(t_person *person);
+void	debug(t_person *person);
+void	refactor(t_person *person);
+void	*coder_routine(void *arg)
+
 
 #endif
-
-	//

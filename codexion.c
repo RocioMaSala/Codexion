@@ -71,7 +71,7 @@ int	init_simulation(t_simulation *sim)
 	return (0);
 }
 
-int	assign_neighbors(t_simulation *sim)
+int	assign_data_persons(t_simulation *sim)
 		// asignar dongles izq y dcha de cada uno
 {
 	int i;
@@ -82,6 +82,9 @@ int	assign_neighbors(t_simulation *sim)
 	{
 		sim->persons[i].id = i + 1;
 		sim->persons[i].sim = sim;
+		sim->persons[i].last_compile_start = 0;
+		sim->persons[i].number_of_compilations = 0;
+		sim->persons[i].actual_state = TAKING_A_DONGLE;
 		if (num == 1)
 		{
 			sim->persons[i].dongle_left = &sim->dongles[i];
@@ -128,11 +131,12 @@ int	main(int argc, char **argv)
 	sim.time_start_sim = timems;
 	if (init_simulation(&sim))
 		return (1);
-	assign_neighbors(&sim);
+	assign_data_persons(&sim);
 	thread_ids = malloc(sizeof(pthread_t) * sim.config.number_of_coders);
 	if (!thread_ids)
 		return (1);
 	create_threads(&sim, thread_ids);
+	pthread_create(&monitor_id, NULL, monitor_routine, &sim); // Ajustar esto bien
 	cleanup_simulation(&sim); // Mirar esto
 	return (0);
 }

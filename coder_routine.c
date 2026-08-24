@@ -58,6 +58,59 @@ int	dongle_disponible(t_dongle *dongle, long long ahora, long long cooldown)
 }
 
 
+void insertar_en_cola(t_queue *queue, t_person *person, long long key)
+{
+	if (queue->size == 2)
+		return;
+	queue->entries[queue->size].person = person;
+    queue->entries[queue->size].priority_key = key;
+    queue->size++;
+}
+
+int tiene_prioridad(t_queue *queue, t_person *person)
+{
+    int ganador;
+
+    if (queue->size == 0)
+        return (1);
+    if (queue->size == 1)
+        return (queue->entries[0].person->id == person->id);
+    if (queue->entries[0].priority_key <= queue->entries[1].priority_key)
+        ganador = queue->entries[0].person->id;
+    else
+        ganador = queue->entries[1].person->id;
+    return (ganador == person->id);
+}
+
+
+void eliminar_de_cola(t_queue *queue, t_person *person)
+{
+    if (queue->size == 0)
+        return;
+    if (queue->entries[0].person->id == person->id)
+    {
+        if (queue->size == 2)
+            queue->entries[0] = queue->entries[1];
+        queue->size--;
+        return;
+    }
+    if (queue->size == 2 && queue->entries[1].person->id == person->id)
+        queue->size--;
+}
+
+long long calcular_priority_key(t_person *person, long long ahora)
+{
+    long long last_compile;
+	
+	if (person->sim->config.scheduler == FIFO)
+        return (ahora);
+	pthread_mutex_lock(&person->state_mutex);
+    last_compile = person->last_compile_start;
+    pthread_mutex_unlock(&person->state_mutex);
+    return (last_compile + person->sim->config.time_to_burnout);
+}
+
+
 int should_stop (t_simulation *sim)
 {
 	int ok_to_go;
@@ -70,44 +123,54 @@ int should_stop (t_simulation *sim)
 }
 
 
-int	take_dongles(t_person *person)
+int take_dongles(t_person *person)
 {
-	long long	ahora;
-	long long	cooldown;
-	int	ok_to_go;
+    long long   ahora;
+    long long   cooldown;
+    int         ok_to_go;
+    int         puedo_izq;
+    int         puedo_der;
+    int         ya_en_cola_izq;
+    int         ya_en_cola_der;
 
-	cooldown = person->sim->config.dongle_cooldown;
-	ok_to_go = 0;
-	while (ok_to_go == 0)
-	{
-		ok_to_go = should_stop (person->sim);
-		ahora = tiempo_actual_relativo(person->sim);
-		pthread_mutex_lock(&person->sim->waiter);
-		if (dongle_disponible(person->dongle_left, ahora, cooldown)
-			&& dongle_disponible(person->dongle_right, ahora, cooldown))
-		{
-			person->dongle_left->is_free = 0;
-			person->dongle_right->is_free = 0;
-			pthread_mutex_unlock(&person->sim->waiter);
-			return (0);
-		}
-		pthread_mutex_unlock(&person->sim->waiter);
-		esperar_turno(person->dongle_right);
-	}
-	return (1);
-}
-
-void	compile(t_person *person)
-{
-	pthread_mutex_lock(&person->state_mutex);
-	person->actual_state = COMPILING;
-	person->last_compile_start = tiempo_actual_relativo(person->sim);
-	pthread_mutex_unlock(&person->state_mutex);
-	pthread_mutex_lock(&person->sim->log);
-	printf("%lld %d is compiling\n", person->last_compile_start, person->id);
-	pthread_mutex_unlock(&person->sim->log);
-	usleep(person->sim->config.time_to_compile * 1000);
-	person->number_of_compilations ++;
+    cooldown = person->sim->config.dongle_cooldown;
+    ok_to_go = 0;
+    ya_en_cola_izq = 0;
+    ya_en_cola_der = 0;
+    while (ok_to_go == 0)
+    {
+        ok_to_go = should_stop(person->sim);
+        ahora = tiempo_actual_relativo(person->sim);
+        pthread_mutex_lock(&person->sim->waiter);
+        puedo_izq = dongle_disponible(person->dongle_left, ahora, cooldown)
+            && tiene_prioridad(&person->dongle_left->waiting_queue, person);
+        puedo_der = dongle_disponible(person->dongle_right, ahora, cooldown)
+            && tiene_prioridad(&person->dongle_right->waiting_queue, person);
+		if (puedo_izq && puedo_der)
+        {
+            person->dongle_left->is_free = 0;
+            person->dongle_right->is_free = 0;
+            eliminar_de_cola(&person->dongle_left->waiting_queue, person);
+            eliminar_de_cola(&person->dongle_right->waiting_queue, person);
+            pthread_mutex_unlock(&person->sim->waiter);
+            return (1);
+        }
+        if (!puedo_izq && !ya_en_cola_izq)
+        {
+            insertar_en_cola(&person->dongle_left->waiting_queue, person,
+                calcular_priority_key(person, ahora));
+            ya_en_cola_izq = 1;
+        }
+        if (!puedo_der && !ya_en_cola_der)
+        {
+            insertar_en_cola(&person->dongle_right->waiting_queue, person,
+                calcular_priority_key(person, ahora));
+            ya_en_cola_der = 1;
+        }
+        pthread_mutex_unlock(&person->sim->waiter);
+        esperar_turno(person->dongle_right);
+    }
+    return (0);
 }
 
 
@@ -125,6 +188,20 @@ void release_dongles(t_person *person)
 	release_one_dongle(person->dongle_left, person->sim);
 	release_one_dongle(person->dongle_right, person->sim);
 }
+
+void	compile(t_person *person)
+{
+	pthread_mutex_lock(&person->state_mutex);
+	person->actual_state = COMPILING;
+	person->last_compile_start = tiempo_actual_relativo(person->sim);
+	pthread_mutex_unlock(&person->state_mutex);
+	pthread_mutex_lock(&person->sim->log);
+	printf("%lld %d is compiling\n", person->last_compile_start, person->id);
+	pthread_mutex_unlock(&person->sim->log);
+	usleep(person->sim->config.time_to_compile * 1000);
+	person->number_of_compilations ++;
+}
+
 
 void	debug(t_person *person)
 {

@@ -41,6 +41,7 @@ int	init_simulation(t_simulation *sim)
 		cleanup_init_failure(sim, i, 3);
 		return (1);
 	}
+	sim->stop_simulation = 0;
 	if (pthread_cond_init(&sim->cond, NULL) != 0)
 	{
 		cleanup_init_failure(sim, i, 4);
@@ -48,6 +49,9 @@ int	init_simulation(t_simulation *sim)
 	}
 	while (i < sim->config.number_of_coders)
 	{
+		sim->dongles[i].waiting_queue.size = 0;
+		sim->dongles[i].time_liberation = 0;
+		sim->dongles[i].is_free = 1;
 		if (pthread_mutex_init(&sim->persons[i].state_mutex, NULL) != 0)
 		{
 			cleanup_init_failure(sim, i, 6);
@@ -123,6 +127,8 @@ int	main(int argc, char **argv)
 	struct timeval	actual_time;
 	long long		timems;
 	pthread_t		*thread_ids;
+	pthread_t		monitor_id;
+	int i;
 
 	if (parse_args(argc, argv, &sim.config))
 		return (1);
@@ -134,9 +140,40 @@ int	main(int argc, char **argv)
 	assign_data_persons(&sim);
 	thread_ids = malloc(sizeof(pthread_t) * sim.config.number_of_coders);
 	if (!thread_ids)
+	{
+		cleanup_simulation(&sim);
 		return (1);
-	create_threads(&sim, thread_ids);
-	pthread_create(&monitor_id, NULL, monitor_routine, &sim); // Ajustar esto bien
-	cleanup_simulation(&sim); // Mirar esto
+	}
+	if (create_threads(&sim, thread_ids) != 0)
+	{
+		free(thread_ids);
+		cleanup_simulation(&sim);
+		return (1);
+	}
+	if (pthread_create(&monitor_id, NULL, monitor_routine, &sim) != 0) // Ajustar esto bien
+	{
+        pthread_mutex_lock(&sim.stop_mutex);
+		sim.stop_simulation = 1;
+		pthread_mutex_unlock(&sim.stop_mutex);
+		i = 0;
+		while (i < sim.config.number_of_coders)
+        {
+            pthread_join(thread_ids[i], NULL);
+            i++;
+        }
+		free(thread_ids);
+		cleanup_simulation(&sim);
+		return(1);
+	}
+	i = 0;
+	while (i < sim.config.number_of_coders)
+	{
+		pthread_join(thread_ids[i], NULL);
+		i++;
+	}
+	pthread_join(monitor_id, NULL);
+
+	free(thread_ids);
+	cleanup_simulation(&sim);
 	return (0);
 }

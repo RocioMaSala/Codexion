@@ -41,8 +41,7 @@ void	cleanup_init_failure(t_simulation *sim, int hasta, int stage)
 	}
 }
 
-void	cleanup_simulation(t_simulation *sim) // Se usa después de pthread_join,
-		tras acabar todo.
+void	cleanup_simulation(t_simulation *sim)
 {
 	int i;
 

@@ -14,7 +14,7 @@
 # define CODEXION_H
 
 # include <limits.h>
-# include <pthread.h> // todo lo relacionado con hilos, mutex, cond vars
+# include <pthread.h>
 # include <stdio.h>
 # include <stdlib.h>   // malloc, free, atoi
 # include <string.h>   // strcmp, strlen
@@ -68,7 +68,7 @@ typedef struct s_dongle
 	long long				time_liberation;
 	pthread_mutex_t			mutex;
 	pthread_cond_t			cond;
-	t_queue					*waiting_queue;
+	t_queue					waiting_queue;
 }							t_dongle;
 
 typedef struct s_simulation	t_simulation;
@@ -117,7 +117,13 @@ void release_one_dongle(t_dongle *dongle, t_simulation *sim);
 void release_dongles(t_person *person);
 void	debug(t_person *person);
 void	refactor(t_person *person);
-void	*coder_routine(void *arg)
+int all_completed(t_simulation *sim);
+void one_burnout(t_simulation *sim);
+void *monitor_routine(void *arg);
+void insertar_en_cola(t_queue *queue, t_person *person, long long key);
+int tiene_prioridad(t_queue *queue, t_person *person);
+void eliminar_de_cola(t_queue *queue, t_person *person);
+long long calcular_priority_key(t_person *person, long long ahora);
 
 
 #endif

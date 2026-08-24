@@ -86,8 +86,7 @@ static int	parse_ll_digits(const char *str, long long *result)
 		if (str[i] < '0' || str[i] > '9')
 			return (1);
 		digit = str[i] - '0';
-		if (acum > (LLONG_MAX - digit) / 10) // overflow check,
-			ahora para long long
+		if (acum > (LLONG_MAX - digit) / 10)
 			return (1);
 		acum = acum * 10 + digit;
 		i++;

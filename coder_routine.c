@@ -42,44 +42,42 @@ long long	tiempo_actual_relativo(t_simulation *sim)
 
 int	dongle_disponible(t_dongle *dongle, long long ahora, long long cooldown)
 {
-	pthread_mutex_lock(&dongle->mutex);
 	if (!dongle->is_free)
 	{
-		pthread_mutex_unlock(&dongle->mutex);
 		return (0);
 	}
 	if (ahora - dongle->time_liberation < cooldown)
 	{
-		pthread_mutex_unlock(&dongle->mutex);
 		return (0);
 	}
-	pthread_mutex_unlock(&dongle->mutex);
 	return (1);
 }
 
 
-void insertar_en_cola(t_queue *queue, t_person *person, long long key)
+void	insertar_en_cola(t_queue *queue, t_person *person, long long key)
 {
-	if (queue->size == 2)
+	t_heap_entry tmp;
+    
+    if (queue->size >= 2)
 		return;
+
 	queue->entries[queue->size].person = person;
-    queue->entries[queue->size].priority_key = key;
-    queue->size++;
+	queue->entries[queue->size].priority_key = key;
+	queue->size++;
+
+	if (queue->size == 2 && queue->entries[1].priority_key < queue->entries[0].priority_key)
+	{
+		tmp = queue->entries[0];
+		queue->entries[0] = queue->entries[1];
+		queue->entries[1] = tmp;
+	}
 }
 
-int tiene_prioridad(t_queue *queue, t_person *person)
+int	tiene_prioridad(t_queue *queue, t_person *person)
 {
-    int ganador;
-
-    if (queue->size == 0)
-        return (1);
-    if (queue->size == 1)
-        return (queue->entries[0].person->id == person->id);
-    if (queue->entries[0].priority_key <= queue->entries[1].priority_key)
-        ganador = queue->entries[0].person->id;
-    else
-        ganador = queue->entries[1].person->id;
-    return (ganador == person->id);
+	if (queue->size == 0)
+		return (1);
+	return (queue->entries[0].person->id == person->id);
 }
 
 
@@ -113,13 +111,13 @@ long long calcular_priority_key(t_person *person, long long ahora)
 
 int should_stop (t_simulation *sim)
 {
-	int ok_to_go;
+	int stop;
 	
-	ok_to_go = 0;
+	stop = 0;
 	pthread_mutex_lock(&sim->stop_mutex);
-	ok_to_go = sim->stop_simulation;
+	stop = sim->stop_simulation;
 	pthread_mutex_unlock(&sim->stop_mutex);
-	return (ok_to_go);
+	return (stop);
 }
 
 
@@ -127,26 +125,25 @@ int take_dongles(t_person *person)
 {
     long long   ahora;
     long long   cooldown;
-    int         ok_to_go;
     int         puedo_izq;
     int         puedo_der;
-    int         ya_en_cola_izq;
-    int         ya_en_cola_der;
+    int ya_en_cola_izq;
+    int ya_en_cola_der;
+    struct timespec limite;
 
     cooldown = person->sim->config.dongle_cooldown;
-    ok_to_go = 0;
     ya_en_cola_izq = 0;
     ya_en_cola_der = 0;
-    while (ok_to_go == 0)
+    
+    pthread_mutex_lock(&person->sim->waiter);
+    while (!should_stop(person->sim))
     {
-        ok_to_go = should_stop(person->sim);
         ahora = tiempo_actual_relativo(person->sim);
-        pthread_mutex_lock(&person->sim->waiter);
         puedo_izq = dongle_disponible(person->dongle_left, ahora, cooldown)
             && tiene_prioridad(&person->dongle_left->waiting_queue, person);
         puedo_der = dongle_disponible(person->dongle_right, ahora, cooldown)
             && tiene_prioridad(&person->dongle_right->waiting_queue, person);
-		if (puedo_izq && puedo_der)
+        if (puedo_izq && puedo_der)
         {
             person->dongle_left->is_free = 0;
             person->dongle_right->is_free = 0;
@@ -155,7 +152,7 @@ int take_dongles(t_person *person)
             pthread_mutex_unlock(&person->sim->waiter);
             return (1);
         }
-        if (!puedo_izq && !ya_en_cola_izq)
+        if (!puedo_izq  && !ya_en_cola_izq)
         {
             insertar_en_cola(&person->dongle_left->waiting_queue, person,
                 calcular_priority_key(person, ahora));
@@ -166,27 +163,44 @@ int take_dongles(t_person *person)
             insertar_en_cola(&person->dongle_right->waiting_queue, person,
                 calcular_priority_key(person, ahora));
             ya_en_cola_der = 1;
-        }
-        pthread_mutex_unlock(&person->sim->waiter);
-        esperar_turno(person->dongle_right);
+            }
+        clock_gettime(CLOCK_REALTIME, &limite);
+		limite.tv_nsec += 5 * 1000000;
+		if (limite.tv_nsec >= 1000000000)
+		{
+			limite.tv_sec++;
+			limite.tv_nsec -= 1000000000;
+		}
+		pthread_cond_timedwait(
+			&person->sim->cond,
+			&person->sim->waiter,
+			&limite);
     }
+    pthread_mutex_unlock(&person->sim->waiter);
     return (0);
 }
 
 
 void release_one_dongle(t_dongle *dongle, t_simulation *sim)
 {
-	pthread_mutex_lock(&dongle->mutex);
 	dongle->is_free = 1;
 	dongle->time_liberation = tiempo_actual_relativo(sim);
-	pthread_cond_broadcast(&dongle->cond);
-	pthread_mutex_unlock(&dongle->mutex);
 }
 
 void release_dongles(t_person *person)
 {
-	release_one_dongle(person->dongle_left, person->sim);
-	release_one_dongle(person->dongle_right, person->sim);
+    t_simulation *sim;
+
+    sim = person->sim;
+
+    pthread_mutex_lock(&sim->waiter);
+
+    release_one_dongle(person->dongle_left, sim);
+    release_one_dongle(person->dongle_right, sim);
+
+    pthread_cond_broadcast(&sim->cond);
+
+    pthread_mutex_unlock(&sim->waiter);
 }
 
 void	compile(t_person *person)

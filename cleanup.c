@@ -53,8 +53,6 @@ void	cleanup_simulation(t_simulation *sim)
 	while (i < sim->config.number_of_coders)
 	{
 		pthread_mutex_destroy(&sim->persons[i].state_mutex);
-		pthread_cond_destroy(&sim->dongles[i].cond);
-		pthread_mutex_destroy(&sim->dongles[i].mutex);
 		i++;
 	}
 	free(sim->persons);

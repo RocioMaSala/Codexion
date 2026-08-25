@@ -50,24 +50,11 @@ int	init_simulation(t_simulation *sim)
 	while (i < sim->config.number_of_coders)
 	{
 		sim->dongles[i].waiting_queue.size = 0;
-		sim->dongles[i].time_liberation = 0;
+		sim->dongles[i].time_liberation = -sim->config.dongle_cooldown;
 		sim->dongles[i].is_free = 1;
 		if (pthread_mutex_init(&sim->persons[i].state_mutex, NULL) != 0)
 		{
-			cleanup_init_failure(sim, i, 6);
-			return (1);
-		}
-		if (pthread_mutex_init(&sim->dongles[i].mutex, NULL) != 0)
-		{
-			pthread_mutex_destroy(&sim->persons[i].state_mutex);
-			cleanup_init_failure(sim, i, 6);
-			return (1);
-		}
-		if (pthread_cond_init(&sim->dongles[i].cond, NULL) != 0)
-		{
-			pthread_mutex_destroy(&sim->persons[i].state_mutex);
-			pthread_mutex_destroy(&sim->dongles[i].mutex);
-			cleanup_init_failure(sim, i, 6);
+			cleanup_init_failure(sim, i, 5);
 			return (1);
 		}
 		i++;
@@ -155,6 +142,9 @@ int	main(int argc, char **argv)
         pthread_mutex_lock(&sim.stop_mutex);
 		sim.stop_simulation = 1;
 		pthread_mutex_unlock(&sim.stop_mutex);
+		pthread_mutex_lock(&sim.waiter);
+		pthread_cond_broadcast(&sim.cond);
+		pthread_mutex_unlock(&sim.waiter);
 		i = 0;
 		while (i < sim.config.number_of_coders)
         {

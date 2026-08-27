@@ -12,24 +12,6 @@
 
 #include "codexion.h"
 
-void esperar_turno(t_dongle *dongle_right)
-{
-    struct timeval      tv;
-    struct timespec     limite;
-    long long           nsec;
-
-    gettimeofday(&tv, NULL);
-    limite.tv_sec = tv.tv_sec;
-    nsec = (tv.tv_usec * 1000) + (5 * 1000000); // tiempo actual en ns + 5ms en ns
-    limite.tv_sec += nsec / 1000000000;         // por si nsec se pasa de 1 segundo completo
-    limite.tv_nsec = nsec % 1000000000;
-
-    pthread_mutex_lock(&dongle_right->mutex);
-    pthread_cond_timedwait(&dongle_right->cond, &dongle_right->mutex, &limite);
-    pthread_mutex_unlock(&dongle_right->mutex);
-}
-
-
 long long	tiempo_actual_relativo(t_simulation *sim)
 {
 	struct timeval	tv;
@@ -60,7 +42,6 @@ void	insertar_en_cola(t_queue *queue, t_person *person, long long key)
     
     if (queue->size >= 2)
 		return;
-
 	queue->entries[queue->size].person = person;
 	queue->entries[queue->size].priority_key = key;
 	queue->size++;

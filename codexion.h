@@ -107,7 +107,6 @@ int							init_simulation(t_simulation *sim);
 void						*coder_routine(void *arg);
 void	cleanup_simulation(t_simulation *sim);
 void cleanup_init_failure (t_simulation *sim, int hasta, int stage);
-void esperar_turno(t_dongle *dongle_right);
 long long	tiempo_actual_relativo(t_simulation *sim);
 int	dongle_disponible(t_dongle *dongle, long long ahora, long long cooldown);
 int should_stop (t_simulation *sim);

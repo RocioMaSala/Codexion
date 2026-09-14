@@ -6,7 +6,7 @@
 /*   By: romarti2 <romarti2@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/17 11:32:41 by romarti2          #+#    #+#             */
-/*   Updated: 2026/08/17 16:46:30 by romarti2         ###   ########.fr       */
+/*   Updated: 2026/09/10 12:39:20 by romarti2         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ void	cleanup_init_failure(t_simulation *sim, int hasta, int stage)
 
 void	cleanup_simulation(t_simulation *sim)
 {
-	int i;
+	int	i;
 
 	i = 0;
 	pthread_mutex_destroy(&sim->waiter);

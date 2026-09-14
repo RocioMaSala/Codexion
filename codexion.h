@@ -6,7 +6,7 @@
 /*   By: romarti2 <romarti2@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/17 11:34:17 by romarti2          #+#    #+#             */
-/*   Updated: 2026/08/17 12:22:04 by romarti2         ###   ########.fr       */
+/*   Updated: 2026/09/10 13:05:40 by romarti2         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,24 +105,28 @@ int							create_threads(t_simulation *sim,
 int							assign_data_persons(t_simulation *sim);
 int							init_simulation(t_simulation *sim);
 void						*coder_routine(void *arg);
-void	cleanup_simulation(t_simulation *sim);
-void cleanup_init_failure (t_simulation *sim, int hasta, int stage);
-long long	tiempo_actual_relativo(t_simulation *sim);
-int	dongle_disponible(t_dongle *dongle, long long ahora, long long cooldown);
-int should_stop (t_simulation *sim);
-int	take_dongles(t_person *person);
-void	compile(t_person *person);
-void release_one_dongle(t_dongle *dongle, t_simulation *sim);
-void release_dongles(t_person *person);
-void	debug(t_person *person);
-void	refactor(t_person *person);
-int all_completed(t_simulation *sim);
-void one_burnout(t_simulation *sim);
-void *monitor_routine(void *arg);
-void insertar_en_cola(t_queue *queue, t_person *person, long long key);
-int tiene_prioridad(t_queue *queue, t_person *person);
-void eliminar_de_cola(t_queue *queue, t_person *person);
-long long calcular_priority_key(t_person *person, long long ahora);
-
+void						cleanup_simulation(t_simulation *sim);
+void						cleanup_init_failure(t_simulation *sim, int hasta,
+								int stage);
+long long					tiempo_actual_relativo(t_simulation *sim);
+int							dongle_disponible(t_dongle *dongle, long long ahora,
+								long long cooldown);
+int							should_stop(t_simulation *sim);
+int							take_dongles(t_person *person);
+void						compile(t_person *person);
+void						release_one_dongle(t_dongle *dongle,
+								t_simulation *sim);
+void						release_dongles(t_person *person);
+void						debug(t_person *person);
+void						refactor(t_person *person);
+int							all_completed(t_simulation *sim);
+void						one_burnout(t_simulation *sim);
+void						*monitor_routine(void *arg);
+void						insertar_en_cola(t_queue *queue, t_person *person,
+								long long key);
+int							tiene_prioridad(t_queue *queue, t_person *person);
+void						eliminar_de_cola(t_queue *queue, t_person *person);
+long long					calcular_priority_key(t_person *person,
+								long long ahora);
 
 #endif

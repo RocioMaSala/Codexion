@@ -6,7 +6,7 @@
 /*   By: romarti2 <romarti2@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/17 11:33:00 by romarti2          #+#    #+#             */
-/*   Updated: 2026/08/17 12:36:21 by romarti2         ###   ########.fr       */
+/*   Updated: 2026/09/10 12:40:36 by romarti2         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,11 +63,12 @@ int	init_simulation(t_simulation *sim)
 }
 
 int	assign_data_persons(t_simulation *sim)
-		// asignar dongles izq y dcha de cada uno
+// asignar dongles izq y dcha de cada uno
 {
 	int i;
-	int num = sim->config.number_of_coders;
+	int num;
 
+	num = sim->config.number_of_coders;
 	i = 0;
 	while (i < num)
 	{
@@ -91,9 +92,8 @@ int	assign_data_persons(t_simulation *sim)
 	return (0);
 }
 
-
 int	create_threads(t_simulation *sim, pthread_t *thread_ids)
-		// Crear todos los hilos
+// Crear todos los hilos
 {
 	int i;
 
@@ -115,7 +115,7 @@ int	main(int argc, char **argv)
 	long long		timems;
 	pthread_t		*thread_ids;
 	pthread_t		monitor_id;
-	int i;
+	int				i;
 
 	if (parse_args(argc, argv, &sim.config))
 		return (1);
@@ -137,9 +137,9 @@ int	main(int argc, char **argv)
 		cleanup_simulation(&sim);
 		return (1);
 	}
-	if (pthread_create(&monitor_id, NULL, monitor_routine, &sim) != 0) // Ajustar esto bien
+	if (pthread_create(&monitor_id, NULL, monitor_routine, &sim) != 0)
 	{
-        pthread_mutex_lock(&sim.stop_mutex);
+		pthread_mutex_lock(&sim.stop_mutex);
 		sim.stop_simulation = 1;
 		pthread_mutex_unlock(&sim.stop_mutex);
 		pthread_mutex_lock(&sim.waiter);
@@ -147,13 +147,13 @@ int	main(int argc, char **argv)
 		pthread_mutex_unlock(&sim.waiter);
 		i = 0;
 		while (i < sim.config.number_of_coders)
-        {
-            pthread_join(thread_ids[i], NULL);
-            i++;
-        }
+		{
+			pthread_join(thread_ids[i], NULL);
+			i++;
+		}
 		free(thread_ids);
 		cleanup_simulation(&sim);
-		return(1);
+		return (1);
 	}
 	i = 0;
 	while (i < sim.config.number_of_coders)
@@ -162,7 +162,6 @@ int	main(int argc, char **argv)
 		i++;
 	}
 	pthread_join(monitor_id, NULL);
-
 	free(thread_ids);
 	cleanup_simulation(&sim);
 	return (0);

@@ -126,6 +126,7 @@ void						insertar_en_cola(t_queue *queue, t_person *person,
 								long long key);
 int							tiene_prioridad(t_queue *queue, t_person *person);
 void						eliminar_de_cola(t_queue *queue, t_person *person);
+int	should_stop(t_simulation *sim);
 long long					calcular_priority_key(t_person *person,
 								long long ahora);
 

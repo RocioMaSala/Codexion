@@ -6,7 +6,7 @@
 /*   By: romarti2 <romarti2@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/17 11:34:17 by romarti2          #+#    #+#             */
-/*   Updated: 2026/09/10 13:05:40 by romarti2         ###   ########.fr       */
+/*   Updated: 2026/10/26 17:06:47 by romarti2         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,8 +126,9 @@ void						insertar_en_cola(t_queue *queue, t_person *person,
 								long long key);
 int							tiene_prioridad(t_queue *queue, t_person *person);
 void						eliminar_de_cola(t_queue *queue, t_person *person);
-int	should_stop(t_simulation *sim);
+int							should_stop(t_simulation *sim);
 long long					calcular_priority_key(t_person *person,
 								long long ahora);
+int							can_take(t_person *p, t_dongle *d, long long ahora);
 
 #endif

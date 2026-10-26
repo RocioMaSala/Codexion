@@ -6,7 +6,7 @@
 /*   By: romarti2 <romarti2@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/17 11:34:00 by romarti2          #+#    #+#             */
-/*   Updated: 2026/09/10 12:39:44 by romarti2         ###   ########.fr       */
+/*   Updated: 2026/10/26 17:05:20 by romarti2         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,6 @@ long long	tiempo_actual_relativo(t_simulation *sim)
 	ahora_absoluto = tv.tv_sec * 1000 + tv.tv_usec / 1000;
 	return (ahora_absoluto - sim->time_start_sim);
 }
-
 
 void	compile(t_person *person)
 {

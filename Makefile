@@ -3,13 +3,16 @@ CC = cc
 CFLAGS = -Wall -Wextra -Werror -pthread
 SRC = cleanup.c \
 	coder_routine.c \
-	codexion.c monitor.c \
+	codexion.c \
+	monitor.c \
+	parsing_outils.c \
 	parsing.c \
 	coder_routine_queue.c \
 	coder_routine_release_dongles_outils.c \
 	coder_routine_stop_simulation.c \
 	coder_routine_taking_dongles.c \
-	parsing_outils.c \
+	coder_routine_dongles_utils.c \
+	print_status.c \
 	init.c
 OBJ = $(SRC:.c=.o)
 

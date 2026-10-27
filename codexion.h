@@ -6,7 +6,7 @@
 /*   By: romarti2 <romarti2@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/17 11:34:17 by romarti2          #+#    #+#             */
-/*   Updated: 2026/10/26 17:06:47 by romarti2         ###   ########.fr       */
+/*   Updated: 2026/10/27 17:13:04 by romarti2         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,5 +130,13 @@ int							should_stop(t_simulation *sim);
 long long					calcular_priority_key(t_person *person,
 								long long ahora);
 int							can_take(t_person *p, t_dongle *d, long long ahora);
+int							parse_positive_int(const char *str,
+								const char *field_name, int min_value,
+								int *result);
+int							parse_ll_digits(const char *str, long long *result);
+int							parse_positive_ll(const char *str,
+								const char *field_name, long long min_value,
+								long long *result);
+void						print_status(t_person *person, char *msg);
 
 #endif

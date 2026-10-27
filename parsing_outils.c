@@ -6,7 +6,7 @@
 /*   By: romarti2 <romarti2@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/17 11:33:16 by romarti2          #+#    #+#             */
-/*   Updated: 2026/10/26 17:54:52 by romarti2         ###   ########.fr       */
+/*   Updated: 2026/10/27 17:12:25 by romarti2         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,7 @@ int	parse_positive_int(const char *str, const char *field_name,
 	return (0);
 }
 
-static int	parse_ll_digits(const char *str, long long *result)
+int	parse_ll_digits(const char *str, long long *result)
 {
 	int			i;
 	long long	acum;

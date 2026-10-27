@@ -19,10 +19,9 @@ int	all_completed(t_simulation *sim)
 	i = 0;
 	while (i < sim->config.number_of_coders)
 	{
-		if (sim->persons[i].number_of_compilations < sim->config.number_of_compiles_required)
-		{
+		if (sim->persons[i].number_of_compilations
+			< sim->config.number_of_compiles_required)
 			return (0);
-		}
 		i++;
 	}
 	pthread_mutex_lock(&sim->stop_mutex);
@@ -32,41 +31,48 @@ int	all_completed(t_simulation *sim)
 	return (1);
 }
 
+static int	is_burned_out(t_simulation *sim, int i, long long now)
+{
+	int	burned;
+
+	pthread_mutex_lock(&sim->persons[i].state_mutex);
+	burned = sim->persons[i].actual_state != COMPILING
+		&& now > sim->persons[i].last_compile_start
+		+ sim->config.time_to_burnout;
+	pthread_mutex_unlock(&sim->persons[i].state_mutex);
+	return (burned);
+}
+
+static void	declare_burnout(t_simulation *sim, int id, long long now)
+{
+	pthread_mutex_lock(&sim->stop_mutex);
+	if (!sim->stop_simulation)
+	{
+		sim->stop_simulation = 1;
+		pthread_mutex_lock(&sim->log);
+		printf("%lld %d burned out\n", now, id);
+		pthread_mutex_unlock(&sim->log);
+		pthread_cond_broadcast(&sim->cond);
+	}
+	pthread_mutex_unlock(&sim->stop_mutex);
+}
+
 void	one_burnout(t_simulation *sim)
 {
 	int			i;
-	long long	deadline;
-	long long	actual_time;
+	long long	now;
 
 	i = 0;
 	while (i < sim->config.number_of_coders)
 	{
-		pthread_mutex_lock(&sim->persons[i].state_mutex);
-		if (sim->persons[i].actual_state != COMPILING)
+		now = tiempo_actual_relativo(sim);
+		if (is_burned_out(sim, i, now))
 		{
-			deadline = sim->persons[i].last_compile_start
-				+ sim->config.time_to_burnout;
-			actual_time = tiempo_actual_relativo(sim);
-			if (actual_time > deadline)
-			{
-				pthread_mutex_unlock(&sim->persons[i].state_mutex);
-				pthread_mutex_lock(&sim->stop_mutex);
-				if (!sim->stop_simulation)
-				{
-					sim->stop_simulation = 1;
-					pthread_mutex_lock(&sim->log);
-					printf("%lld %d burned out\n", actual_time,
-						sim->persons[i].id);
-					pthread_mutex_unlock(&sim->log);
-					pthread_cond_broadcast(&sim->cond);
-				}
-				pthread_mutex_unlock(&sim->stop_mutex);
-			}
+			declare_burnout(sim, sim->persons[i].id, now);
+			return ;
 		}
-		pthread_mutex_unlock(&sim->persons[i].state_mutex);
 		i++;
 	}
-	return ;
 }
 
 void	*monitor_routine(void *arg)
@@ -74,7 +80,7 @@ void	*monitor_routine(void *arg)
 	t_simulation	*sim;
 
 	sim = (t_simulation *)arg;
-	while ((!should_stop(sim)))
+	while (!should_stop(sim))
 	{
 		if (all_completed(sim))
 			break ;

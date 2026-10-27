@@ -18,8 +18,8 @@ long long	tiempo_actual_relativo(t_simulation *sim)
 	long long		ahora_absoluto;
 
 	gettimeofday(&tv, NULL);
-	ahora_absoluto = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-	return (ahora_absoluto - sim->time_start_sim);
+	ahora_absoluto = tv.tv_sec * 1000000 + tv.tv_usec;
+	return ((ahora_absoluto - sim->time_start_sim) / 1000);
 }
 
 void	compile(t_person *person)
@@ -28,11 +28,11 @@ void	compile(t_person *person)
 	person->actual_state = COMPILING;
 	person->last_compile_start = tiempo_actual_relativo(person->sim);
 	pthread_mutex_unlock(&person->state_mutex);
-	pthread_mutex_lock(&person->sim->log);
-	printf("%lld %d is compiling\n", person->last_compile_start, person->id);
-	pthread_mutex_unlock(&person->sim->log);
+	print_status(person, "is compiling");
 	usleep(person->sim->config.time_to_compile * 1000);
+	pthread_mutex_lock(&person->state_mutex);
 	person->number_of_compilations++;
+	pthread_mutex_unlock(&person->state_mutex);
 }
 
 void	debug(t_person *person)
@@ -43,9 +43,7 @@ void	debug(t_person *person)
 	person->actual_state = DEBUGGING;
 	actual_time = tiempo_actual_relativo(person->sim);
 	pthread_mutex_unlock(&person->state_mutex);
-	pthread_mutex_lock(&person->sim->log);
-	printf("%lld %d is debugging\n", actual_time, person->id);
-	pthread_mutex_unlock(&person->sim->log);
+	print_status(person, "is debugging");
 	usleep(person->sim->config.time_to_debug * 1000);
 }
 
@@ -57,9 +55,7 @@ void	refactor(t_person *person)
 	person->actual_state = REFACTORING;
 	actual_time = tiempo_actual_relativo(person->sim);
 	pthread_mutex_unlock(&person->state_mutex);
-	pthread_mutex_lock(&person->sim->log);
-	printf("%lld %d is refactoring\n", actual_time, person->id);
-	pthread_mutex_unlock(&person->sim->log);
+	print_status(person, "is refactoring");
 	usleep(person->sim->config.time_to_refactor * 1000);
 }
 

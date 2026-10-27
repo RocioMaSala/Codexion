@@ -17,8 +17,8 @@ static void	set_start_time(t_simulation *sim)
 	struct timeval	actual_time;
 
 	gettimeofday(&actual_time, NULL);
-	sim->time_start_sim = actual_time.tv_sec * 1000
-		+ actual_time.tv_usec / 1000;
+	sim->time_start_sim = actual_time.tv_sec * 1000000
+		+ actual_time.tv_usec;
 }
 
 static void	join_coders(t_simulation *sim, pthread_t *thread_ids)
@@ -47,6 +47,7 @@ static int	run(t_simulation *sim, pthread_t *thread_ids)
 {
 	pthread_t	monitor_id;
 
+	set_start_time(sim);
 	if (create_threads(sim, thread_ids) != 0)
 		return (1);
 	if (pthread_create(&monitor_id, NULL, monitor_routine, sim) != 0)
@@ -68,7 +69,6 @@ int	main(int argc, char **argv)
 
 	if (parse_args(argc, argv, &sim.config))
 		return (1);
-	set_start_time(&sim);
 	if (init_simulation(&sim))
 		return (1);
 	assign_data_persons(&sim);

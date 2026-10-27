@@ -6,7 +6,7 @@
 /*   By: romarti2 <romarti2@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/17 11:34:00 by romarti2          #+#    #+#             */
-/*   Updated: 2026/10/26 17:29:46 by romarti2         ###   ########.fr       */
+/*   Updated: 2026/10/27 17:09:02 by romarti2         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ static int	try_take(t_person *p, long long ahora, int *ya)
 
 	izq = can_take(p, p->dongle_left, ahora);
 	der = can_take(p, p->dongle_right, ahora);
-	if (izq && der)
+	if (izq && der && p->dongle_left != p->dongle_right)
 	{
 		take_both(p);
 		return (1);
@@ -73,6 +73,8 @@ int	take_dongles(t_person *person)
 		if (try_take(person, tiempo_actual_relativo(person->sim), ya))
 		{
 			pthread_mutex_unlock(&person->sim->waiter);
+			print_status(person, "has taken a dongle");
+			print_status(person, "has taken a dongle");
 			return (1);
 		}
 		wait_turn(person->sim);

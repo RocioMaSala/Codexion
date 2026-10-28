@@ -1,72 +1,82 @@
-# **Codexion**
+*This project has been created as part of the 42 curriculum by romarti2.*
 
-This project has been created as part of the 42 curriculum by romarti2.
+# Codexion
 
 ## Description
 
-Codexion is a multithreaded C project that simulates programmers competing for shared resources called dongles.
+Codexion is a multithreaded C simulation of coders sitting in a circle who
+share USB dongles. Each coder is a thread and needs **two** dongles to
+compile. After compiling, it releases them and continues with debugging and
+refactoring. A coder who does not start a compile within `time_to_burnout`
+burns out and the simulation stops.
 
-Each programmer is represented by a thread and must acquire two dongles to compile. After compiling, the dongles are released and the programmer continues with debugging and refactoring.
+Two scheduling policies decide who gets a contested dongle:
+- **fifo**: first to ask, first served.
+- **edf** (earliest deadline first): the coder closest to burning out goes first.
 
-The main goal is to manage concurrency safely while preventing deadlocks, starvation and race conditions.
+A monitor thread detects burnouts and the end of the simulation.
 
 ## Instructions
-- Compilation: make
-- To recompile from scratch: make re
-- To clean object files: make clean
-- To remove all generated files: make fclean
 
+- `make`: compile the project
+- `make clean`: remove object files
+- `make fclean`: remove object files and the binary
+- `make re`: recompile from scratch
 
 ## Execution
-./codexion <arguments>
 
-*Check the project subject for the required arguments and their order.*
+```
+./codexion number_of_coders time_to_burnout time_to_compile time_to_debug \
+           time_to_refactor number_of_compiles_required dongle_cooldown scheduler
+```
+
+Times are in milliseconds and `scheduler` is `fifo` or `edf`. Example:
+
+```
+./codexion 5 800 200 200 200 3 50 fifo
+```
 
 ## Blocking cases handled
-- **Deadlocks**: both dongles are acquired under the same synchronization mechanism, preventing threads from holding one dongle indefinitely while waiting for another.
-- **Coffman conditions**: the resource acquisition strategy prevents circular wait and hold-and-wait situations.
-- **Starvation**: waiting queues and FIFO/priority scheduling ensure that waiting programmers are considered fairly.
-- **Dongle cooldown**: each dongle stores its release time and cannot be reused before the configured cooldown has elapsed.
-- **Termination**: the simulation stop flag is protected by a mutex and checked by all programmer threads, during compilation, debugging and refactoring. 
-- **Log serialization**: logging is protected by a dedicated mutex so messages from different threads do not overlap.
+
+- **Deadlock / Coffman conditions**: a coder takes both dongles at once under
+  the `waiter` mutex or takes none. It never holds one dongle while waiting
+  for the other, so *hold-and-wait* (and therefore circular wait) cannot occur.
+- **Starvation**: each dongle has a waiting queue ordered by priority (arrival
+  time for fifo, burnout deadline for edf). Only the head of the queue can take
+  the dongle.
+- **Dongle cooldown**: each dongle stores its release time and cannot be taken
+  again until `dongle_cooldown` ms have passed.
+- **Single coder**: with one coder there is one dongle, so it can never
+  compile and burns out at `time_to_burnout`.
+- **Termination**: the stop flag is protected by a mutex. Coders check it
+  while waiting for dongles and between compile, debug and refactor; waiting
+  threads are woken with a broadcast when the simulation stops.
+- **Log serialization**: a single function prints under the log mutex and
+  checks the stop flag first, so messages never overlap and nothing is printed
+  after a burnout.
 
 ## Thread synchronization mechanisms
 
-The project uses POSIX threads and the following synchronization primitives:
+- `pthread_mutex_t waiter`: protects dongle state and queues during acquisition
+  and release.
+- `pthread_mutex_t stop_mutex`: protects the stop flag.
+- `pthread_mutex_t log`: serializes output.
+- `pthread_mutex_t state_mutex` (one per coder): protects its state and
+  `last_compile_start`, read by the monitor.
+- `pthread_cond_t cond`: coders wait on it with `pthread_cond_timedwait` when
+  dongles are unavailable. On release and on stop, `pthread_cond_broadcast`
+  wakes them to re-check.
 
-- **pthread_mutex_t** — protects shared resources and data such as dongles, waiting queues, programmer state, the simulation status and logging.
-- **pthread_cond_t** — allows programmers to wait efficiently when dongles are unavailable and be notified when resources are released.
-- **Custom event mechanism** — condition variables are used to notify waiting threads when the shared resource state changes.
-
-For example, dongle acquisition is protected by the waiter mutex, ensuring that checking and modifying the dongle state cannot be performed simultaneously by different threads.
-
-When dongles are released:
-
-- **pthread_cond_broadcast(&sim->cond)** — waiting programmers are notified and can safely check the resources again.
-
-The monitor and programmer threads communicate through shared state protected by mutexes, preventing data races.
+The mutexes are always taken in the same order (`waiter` → `stop_mutex` →
+`log`), which avoids deadlocks between them. There are no global variables:
+all shared data lives in a `t_simulation` struct passed by pointer.
 
 ## Resources
-42 project subject and documentation.
 
-POSIX Threads (pthread) documentation.
+- POSIX Threads documentation (`man pthread_mutex_lock`,
+  `pthread_cond_timedwait`, `pthread_cond_broadcast`)
+- Coffman conditions for deadlock
+- 42 project subject
 
-pthread_mutex_t and pthread_cond_t documentation.
-
-Coffman's deadlock conditions.
-
-Peer to Peer. 
-
-### AI usage
-
-AI was used as a support tool to:
-
-Understand pthreads, mutexes and condition variables.
-
-Review concurrency and synchronization logic.
-
-Identify potential race conditions and deadlocks.
-
-Help structure and review the project documentation.
-
-*The implementation and final decisions were made by the project authors.*
+AI usage: used as a tutor to understand mutexes, condition variables, race
+conditions and deadlocks, and to review this README.

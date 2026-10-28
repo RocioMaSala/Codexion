@@ -6,7 +6,7 @@
 /*   By: romarti2 <romarti2@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/17 11:34:00 by romarti2          #+#    #+#             */
-/*   Updated: 2026/10/27 17:09:02 by romarti2         ###   ########.fr       */
+/*   Updated: 2026/10/28 17:34:42 by romarti2         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,12 +28,14 @@ static	void	enqueue_once(t_person *p, t_dongle *d, int *ya, long long ahora)
 	*ya = 1;
 }
 
-static	void	wait_turn(t_simulation *sim)
+static void	wait_turn(t_simulation *sim)
 {
 	struct timespec	limite;
+	struct timeval	now;
 
-	clock_gettime(CLOCK_REALTIME, &limite);
-	limite.tv_nsec += 5 * 1000000;
+	gettimeofday(&now, NULL);
+	limite.tv_sec = now.tv_sec;
+	limite.tv_nsec = now.tv_usec * 1000 + 5 * 1000000;
 	if (limite.tv_nsec >= 1000000000)
 	{
 		limite.tv_sec++;
